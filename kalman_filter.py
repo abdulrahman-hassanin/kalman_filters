@@ -59,6 +59,21 @@ class KalmanFilter():
         self.P = self.P - np.dot(np.dot(K, S), K.T)
         return predicted_measurent
 
+    def calculate_rmse(self, estimations, ground_truth):
+        '''
+        Root Mean Squared Error.
+        '''
+        if len(estimations) != len(ground_truth) or len(estimations) == 0:
+            raise ValueError('calculate_rmse () - Error - estimations and ground_truth must match in length.')
+
+        rmse = np.zeros((self.dim_z, self.dim_z))
+
+        for est, gt in zip(estimations, ground_truth):
+            rmse += np.square(est - gt)
+
+        rmse /= len(estimations)
+        return np.sqrt(rmse)
+
 if __name__ == '__main__':
     x_dim = 3
     z_dim = 1
@@ -75,8 +90,8 @@ if __name__ == '__main__':
     
     kf = KalmanFilter(x_dim, z_dim, A=A, H=H, Q=Q, R=R)
 
-    x = np.linspace(-10, 10, 100)
-    measurements = x**2 + 2*x - 2  + np.random.normal(0, 2, 100)
+    x = np.linspace(-10, 10, 200)
+    measurements = x**2 + 2*x - 2  + np.random.normal(0, 2, 200)
     
     predictions = []
     for z in measurements:
@@ -84,8 +99,12 @@ if __name__ == '__main__':
         pred_measurment = kf.update(z)
         predictions.append(pred_measurment[0])
 
+    rmse = kf.calculate_rmse(predictions, measurements)
+    print(rmse)
+
     plt.plot(range(len(measurements)), measurements, label = 'Measurements')
     plt.plot(range(len(predictions)), np.array(predictions), label = 'Kalman Filter Prediction')
+    plt.text(0, 95, 'RMSE = {}'.format(rmse[0, 0].round(5)))
     plt.legend()
-    # plt.savefig('./assert/kf_out.png')
+    plt.savefig('./assert/kf_out.png')
     plt.show()
