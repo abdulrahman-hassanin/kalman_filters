@@ -66,7 +66,7 @@ class KalmanFilter():
         if len(estimations) != len(ground_truth) or len(estimations) == 0:
             raise ValueError('calculate_rmse () - Error - estimations and ground_truth must match in length.')
 
-        rmse = np.zeros((self.dim_z, self.dim_z))
+        rmse = np.zeros((self.dim_x, 1))
 
         for est, gt in zip(estimations, ground_truth):
             rmse += np.square(est - gt)
@@ -99,12 +99,8 @@ if __name__ == '__main__':
         pred_measurment = kf.update(z)
         predictions.append(pred_measurment[0])
 
-    rmse = kf.calculate_rmse(predictions, measurements)
-    print(rmse)
-
     plt.plot(range(len(measurements)), measurements, label = 'Measurements')
     plt.plot(range(len(predictions)), np.array(predictions), label = 'Kalman Filter Prediction')
-    plt.text(0, 95, 'RMSE = {}'.format(rmse[0, 0].round(5)))
     plt.legend()
     plt.savefig('./assert/kf_out.png')
     plt.show()
