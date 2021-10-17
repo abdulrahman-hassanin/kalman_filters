@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 class KalmanFilter():
     """
-    This class implement the kalman filter quations.
+    This class implements the kalman filter quations.
     
     arguments:
         dim_x: integer
@@ -87,5 +87,5 @@ if __name__ == '__main__':
     plt.plot(range(len(measurements)), measurements, label = 'Measurements')
     plt.plot(range(len(predictions)), np.array(predictions), label = 'Kalman Filter Prediction')
     plt.legend()
-    plt.savefig('./assert/kf_out.png')
+    # plt.savefig('./assert/kf_out.png')
     plt.show()
