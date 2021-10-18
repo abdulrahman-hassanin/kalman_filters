@@ -59,15 +59,6 @@ class KalmanFilter():
         self.P = self.P - np.dot(np.dot(K, S), K.T)
         return predicted_measurent
 
-    def Update_A(self, dt):
-        '''
-        updates the motion model and process covar based on delta time from last measurement.
-        '''
-        self.A   = np.matrix([[1,0,dt,0],
-                                [0,1,0,dt],
-                                [0,0,1,0],
-                                [0,0,0,1]])
-
     def calculate_rmse(self, estimations, ground_truth):
         '''
         Root Mean Squared Error.
