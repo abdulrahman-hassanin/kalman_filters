@@ -2,7 +2,7 @@ import numpy as np
 
 class ExtendedKalmanFilter(object):
     """
-    This class implements the kalman filter quations.
+    This class implements the Extended kalman filter quations.
     
     arguments:
         dim_x: integer
