@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 class KalmanFilter():
     """
@@ -34,6 +33,8 @@ class KalmanFilter():
         self.H = np.zeros((self.dim_z, self.dim_x)) if H is None else H
         self.R = np.eye(self.dim_z) if R is None else R
 
+        self.previous_time_stamp = 0
+
     def predict(self):
         """
         This function to perform the prediction step in kalman filter, to compute 
@@ -41,7 +42,6 @@ class KalmanFilter():
         """
         self.x = np.dot(self.A, self.x)
         self.P = np.dot((np.dot(self.A, self.P)), self.A.T) + self.Q
-        
 
     def update(self, measurment):
         """
@@ -59,6 +59,15 @@ class KalmanFilter():
         self.P = self.P - np.dot(np.dot(K, S), K.T)
         return predicted_measurent
 
+    def Update_A(self, dt):
+        '''
+        updates the motion model and process covar based on delta time from last measurement.
+        '''
+        self.A   = np.matrix([[1,0,dt,0],
+                                [0,1,0,dt],
+                                [0,0,1,0],
+                                [0,0,0,1]])
+
     def calculate_rmse(self, estimations, ground_truth):
         '''
         Root Mean Squared Error.
@@ -73,34 +82,3 @@ class KalmanFilter():
 
         rmse /= len(estimations)
         return np.sqrt(rmse)
-
-if __name__ == '__main__':
-    x_dim = 3
-    z_dim = 1
-
-    dt = 0.1
-    A = np.array([[1, dt, 0], [0, 1, dt], [0, 0, 1]])
-
-    q_delta = np.array([0, 0, 1]).reshape(3, 1)
-    q_c = np.array([0.5]).reshape(1,1)
-    Q = np.dot(np.dot(q_delta, q_c), q_delta.T)
-    
-    H = np.array([1, 0, 0]).reshape(1, 3) 
-    R = np.array([0.5]).reshape(1, 1)
-    
-    kf = KalmanFilter(x_dim, z_dim, A=A, H=H, Q=Q, R=R)
-
-    x = np.linspace(-10, 10, 200)
-    measurements = x**2 + 2*x - 2  + np.random.normal(0, 2, 200)
-    
-    predictions = []
-    for z in measurements:
-        kf.predict()
-        pred_measurment = kf.update(z)
-        predictions.append(pred_measurment[0])
-
-    plt.plot(range(len(measurements)), measurements, label = 'Measurements')
-    plt.plot(range(len(predictions)), np.array(predictions), label = 'Kalman Filter Prediction')
-    plt.legend()
-    plt.savefig('./assert/kf_out.png')
-    plt.show()
