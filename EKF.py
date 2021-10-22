@@ -1,3 +1,4 @@
+import math
 import numpy as np
 
 class ExtendedKalmanFilter(object):
@@ -10,63 +11,92 @@ class ExtendedKalmanFilter(object):
         dim_z: integer 
             Dimension of the measurement vector.
         x : np.array(dim_x, 1)
-            Current state vector mean.
+            Current state vector.
         P : np.array(dim_x, dim_x)
-            Current state vector covariance. 
-        A : np.array(dim_x, dim_x)
-            State transition matrix.
+            Current state vector covariance.
+        F_ : np.array(dim_x, dim_x)
+            Transition matrix.
+        F_fun : Function
+            In linear case, it update the F_ matrix.
+            In non-linear case, it calculates f(x).
+        F_Jacobian_fun : 
+            Jacobbian function of the F.
         Q : np.array(dim_x, dim_x)
             Process noise covariance.
-        H : np.array(dim_z, dim_x)
-            Measurement transition matrix.
+        H_ : np.array(z_dim, x_dim)
+            Measurment ransition matrix.
+        H_fun : Function
+            In linear case, it update the H_ matrix.
+            In non-linear case, it calculates H(x).
+        H_Jacobian_fun : Function
+            Jacobbian function of the H.
         R : np.array(dim_z, dim_z)
             Measurement nosie covariance.
     """
-    def __init__(self, dim_x, dim_z, x=None, P=None, A=None, H=None, Q=None, R=None, is_A_nonlinear=False, is_H_nonlinear=False):
-        self.dim_x = dim_x
-        self.dim_z = dim_z
+    def __init__(self, x_dim, z_dim, F_fun, F_Jacobian_fun=None, H_fun = None, H_Jacobian_fun = None, 
+                       Q_update_fun = None, process_noise_cov=None, measument_noise_cov=None):
 
-        self.is_A_nonlinear = is_A_nonlinear
-        self.is_H_nonlinear = is_H_nonlinear
+        self.x_dim = x_dim
+        self.z_dim = z_dim
 
-        self.x = np.zeros((self.dim_x, 1)) if x is None else x
-        self.P = np.eye(self.dim_x) if P is None else P
-        self.A = np.eye(self.dim_x) if A is None else A
-        self.Q = np.eye(self.dim_x) if Q is None else Q
-        self.H = np.zeros((self.dim_z, self.dim_x)) if H is None else H
-        self.R = np.eye(self.dim_z) if R is None else R
+        self.x = np.ones((self.x_dim, 1))
+        self.P = np.eye(self.x_dim) 
 
-        self.previous_time_stamp = 0
+        self.F_fun = F_fun
+        self.F_Jacobian_fun = F_Jacobian_fun
+        self.F_ = np.ones((x_dim, x_dim)) 
 
-    def predict(self, jacobian_A=None):
+        self.H_fun = H_fun
+        self.H_Jacobian_fun = H_Jacobian_fun
+        self.H_ = np.ones((z_dim, x_dim))
+
+        self.Q = np.ones((self.x_dim, self.x_dim))
+        self.Q_update_fun = Q_update_fun
+        self.process_noise_cov = process_noise_cov
+        self.R = measument_noise_cov
+
+        self.prev_time_stamp = 0
+        self.dt = 0
+    
+    def predict(self):
         """
         This function to perform the prediction step in kalman filter, to compute 
         the predict density by calculating the mean and the covariance of the state
         """
-        if self.is_A_nonlinear:
-            self.A = jacobian_A(self.A)
 
-        self.x = np.dot(self.A, self.x)
-        self.P = np.dot((np.dot(self.A, self.P)), self.A.T) + self.Q
+        self.Q = self.Q_update_fun(self.process_noise_cov, self.dt)
 
-    def update(self, measurment, jacobian_H=None):
+        if self.F_Jacobian_fun is None:
+            self.F_ = self.F_fun(self.x, self.dt)
+            self.x  = np.dot(self.F_, self.x)
+            self.P  = np.dot((np.dot(self.F_, self.P)), self.F_.T) + self.Q
+        else:
+            self.F_ = self.F_Jacobian_fun(self.x, self.z_dim, self.x_dim, self.dt)
+            self.x = self.F_fun(self.x, self.dt)
+            self.P  = np.dot((np.dot(self.F_, self.P)), self.F_.T) + self.Q
+
+    def update(self, measurment):
         """
         This function to perform the update step in the kalman filter, to compute the
         posterior density, given the prior density. it compute the kalman gain (K), 
         then the innivation gain (V), and the innovation covariance (S). Finally it return 
         the mean and covariance of the posterior density.
         """
-        if self.is_H_nonlinear:
-            self.H = jacobian_H(self.H) 
+        if self.H_Jacobian_fun is None:
+            self.H_ = self.H_fun(self.x, self.dt)
+            predicted_measurent = np.dot(self.H_, self.x)
+        else:
+            self.H_ = self.H_Jacobian_fun(self.x, self.z_dim, self.x_dim, self.dt)
+            predicted_measurent = self.H_fun(self.x)
 
-        predicted_measurent = np.dot(self.H, self.x)
         V = measurment - predicted_measurent
-        S = np.dot(np.dot(self.H, self.P), self.H.T) + self.R 
-        K = np.dot(np.dot(self.P, self.H.T), np.linalg.inv(S))
+        S = np.dot(np.dot(self.H_, self.P), self.H_.T) + self.R 
+        K = np.dot(np.dot(self.P, self.H_.T), np.linalg.inv(S))
 
         self.x = self.x + np.dot(K, V)
         self.P = self.P - np.dot(np.dot(K, S), K.T)
-        return predicted_measurent
+        
+        return V
 
     def calculate_rmse(self, estimations, ground_truth):
         '''
@@ -75,7 +105,7 @@ class ExtendedKalmanFilter(object):
         if len(estimations) != len(ground_truth) or len(estimations) == 0:
             raise ValueError('calculate_rmse () - Error - estimations and ground_truth must match in length.')
 
-        rmse = np.zeros((self.dim_x, 1))
+        rmse = np.zeros((self.x_dim, 1))
 
         for est, gt in zip(estimations, ground_truth):
             rmse += np.square(est - gt)
