@@ -12,7 +12,7 @@ def F_fun(x, dt=None):
                   [0, 0,  0,  1]])
     return F
 
-def Q_update(process_noise_cov, dt):
+def Q_update(x, process_noise_cov, dt):
     fq = np.array([[dt**2/2,       0],
                    [      0, dt**2/2],
                    [dt     ,       0],
