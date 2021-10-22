@@ -57,7 +57,7 @@ class KalmanFilter():
 
         self.x = self.x + np.dot(K, V)
         self.P = self.P - np.dot(np.dot(K, S), K.T)
-        return predicted_measurent
+        return predicted_measurent, V
 
     def calculate_rmse(self, estimations, ground_truth):
         '''

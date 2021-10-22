@@ -51,6 +51,7 @@ if __name__ == '__main__':
     ################################## Run KF Tracker ###############################################
     predictions = []
     estimations = []
+    Innovation = []
     for z in lidar_measurments:
         current_time_stamp = z[2]
         z = z[:2].reshape(z_dim, 1)
@@ -60,8 +61,9 @@ if __name__ == '__main__':
         kf.A = Update_A(dt)
 
         kf.predict()
-        pred_measurment = kf.update(z)
+        pred_measurment, V = kf.update(z)
 
+        Innovation.append(V)
         predictions.append(pred_measurment)
         estimations.append(kf.x)
 
@@ -69,12 +71,33 @@ if __name__ == '__main__':
     lidar_groundtruth = np.array(lidar_groundtruth)
     predictions = np.array(predictions)
     estimations = np.array(estimations)
+    Innovation = np.array(Innovation)
+
     lidar_groundtruth = np.expand_dims(lidar_groundtruth, axis=2)
     RMSE = kf.calculate_rmse(estimations, lidar_groundtruth).T
     print(RMSE)
 
+    ########### Plotting
+    fig = plt.figure(figsize = [16,6])
+    X = np.arange(1, len(Innovation)+1, 1)
+    
+    plt.subplot(1, 2, 1)
+    ax = plt.scatter(x=X.reshape(-1), y=Innovation[:, 0])
+    plt.title('Innovation of X position')
+    plt.xlabel('No. measurments')
+    plt.ylabel('Innovation')
+    
+    plt.subplot(1, 2, 2)
+    ax = plt.scatter(x=X.reshape(-1), y=Innovation[:, 1])
+    plt.title('Innovation of Y position')
+    plt.xlabel('No. measurments')
+    plt.ylabel('Innovation')
+    # plt.show()
+
+    fig = plt.figure(figsize = [8,8])
+
     plt.scatter(lidar_groundtruth[:, 0], lidar_groundtruth[:, 1], label='Ground Truth Measurment')
-    plt.scatter(predictions[:, 0], predictions[:, 1], label='Kalman Filter Estimation')
+    plt.scatter(estimations[:, 0], estimations[:, 1], label='Kalman Filter Estimation')
     plt.title('Ground Truth Vs KF Estimation on LiDAR Data')
     plt.xlabel('X (position)')
     plt.ylabel('Y (Position)')
