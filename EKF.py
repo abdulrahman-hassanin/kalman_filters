@@ -64,7 +64,7 @@ class ExtendedKalmanFilter(object):
         the predict density by calculating the mean and the covariance of the state
         """
 
-        self.Q = self.Q_update_fun(self.process_noise_cov, self.dt)
+        self.Q = self.Q_update_fun(self.x, self.process_noise_cov, self.dt)
 
         if self.F_Jacobian_fun is None:
             self.F_ = self.F_fun(self.x, self.dt)
