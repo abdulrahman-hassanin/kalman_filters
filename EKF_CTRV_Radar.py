@@ -85,11 +85,6 @@ def H_Jacobian_fun(x, z_dim, x_dim, dt=None):
     H[1, 0] = -py / ro_2
     H[1, 1] =  px / ro_2
 
-
-    # temp = (px*math.cos(si) + py*math.sin(si)) / ro_2
-
-    # H[2, 0] = (v/ro) * (math.cos(si) - px*temp)
-    # H[2, 1] = (v/ro) * (math.sin(si) - py*temp)
     H[2, 0] = (v/ro) - (math.cos(si) - (px*px*math.cos(si)/ro_2) - (px*py*math.sin(si)/ro_2))
     H[2, 1] = (v/ro) - (math.sin(si) - (py*py*math.sin(si)/ro_2) - (px*py*math.cos(si)/ro_2))
     H[2, 2] = (px*math.cos(si) + py*math.sin(si)) / ro
