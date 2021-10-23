@@ -126,7 +126,7 @@ if __name__ == '__main__':
     
     plt.subplot(1, 3, 3)
     ax = plt.scatter(x=X.reshape(-1), y=Innovation[:, 2])
-    plt.title('Innovation of  radial distance rate')
+    plt.title('Innovation of radial distance rate')
     plt.xlabel('No. measurments')
     plt.ylabel('Innovation')
     plt.savefig('./assert/EKF_CV_radar_Innovation.png')
@@ -135,7 +135,7 @@ if __name__ == '__main__':
     fig = plt.figure(figsize = [8,8])
     plt.scatter(radar_groundtruth[:, 0], radar_groundtruth[:, 1], label='Ground Truth Measurment')
     plt.scatter(estimations[:, 0], estimations[:, 1], label='Kalman Filter Estimation')
-    plt.title('Ground Truth Vs EKF Estimation on LiDAR Data')
+    plt.title('Ground Truth Vs EKF Estimation on Radar Data')
     plt.xlabel('X (position)')
     plt.ylabel('Y (Position)')
     plt.legend()
